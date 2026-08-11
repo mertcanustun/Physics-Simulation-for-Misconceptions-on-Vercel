@@ -1,1 +1,2 @@
-# hiçbir şey hariç tutulmuyor — build/ zaten yalnızca dağıtılacak dosyaları içerir
+.gdignore
+.vercelignore
