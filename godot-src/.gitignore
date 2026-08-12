@@ -1,0 +1,21 @@
+# Godot 4+ editor cache (yeniden üretilir)
+.godot/
+
+# macOS
+.DS_Store
+
+# Godot dışa aktarımları
+/build/
+/export/
+
+# arşivler
+*.zip
+
+# NOT (2026-08-12): export_presets.cfg ARTIK TAKİP EDİLİYOR.
+# İçinde gizli bilgi yok ve "Web" preset'indeki
+#   include_filter="localization/*.csv"
+# satırı olmadan dışa aktarılan build'de TÜM METİNLER KAYBOLUYOR
+# (bkz. GELISTIRME-REHBERI "Web export metin hatası"). Repoda durmalı.
+#
+# Aynı sebeple localization/*.import da takip ediliyor: dosya yoksa temiz bir
+# klonda "godot --headless --export-release" ilk çalıştırmada farklı davranır.

@@ -1,0 +1,19 @@
+# Godot editor onbellegi (yeniden uretilir)
+godot-src/.godot/
+
+# yerel Vercel CLI ciktilari
+.vercel/
+node_modules/
+
+# macOS / Windows
+.DS_Store
+Thumbs.db
+
+# arsivler
+*.zip
+*.tpz
+
+# ONEMLI: public/ klasoru GIT'E GIRMELIDIR.
+# Vercel bu projede hicbir build calistirmaz (buildCommand yok); yayinlanan
+# sey dogrudan public/ icindeki dosyalardir. public/ ignore edilirse Vercel
+# bos bir site yayinlar.

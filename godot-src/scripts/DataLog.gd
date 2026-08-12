@@ -1,0 +1,127 @@
+class_name DataLog
+## Her denemeyi user://session_log.csv dosyasına bir satır olarak ekler.
+## Masaüstünde: %APPDATA%/Godot/app_userdata/... | Linux: ~/.local/share/godot/app_userdata/...
+## Web (tarayıcı) sürümünde: kalıcı IndexedDB alanı - CSV indirmesi JavaScriptBridge ile yapılır.
+##
+## KAYDEDİLEN ALANLAR (kullanıcının yaptığı TÜM seçimler dahil):
+##   kuvvet seçimleri (yerçekimi / vuruş kuvveti / hava direnci),
+##   vuruş kuvveti F büyüklüğü, vuruş hızı ve açısı, sonucun doğruluğu,
+##   gol olup olmadığı, iniş mesafesi, yanılgı kategorisi ve denemenin ne
+##   kadar sürdüğü. (2026-08-07: hava direnci artık tek sabit - Az/Orta/Fazla
+##   seviyesi kaldırıldığı için "friction_level" sütunu da kaldırıldı.)
+
+const PATH := "user://session_log.csv"
+const HEADER := "timestamp_utc,session_id,participant_code,group,seen_topic,session_mode,attempt,gravity,kick_force_sel,air_resistance,kick_force_mag,v0_mps,angle_deg,correct,category,goal,landing_x_m,decision_seconds\n"
+
+static var session_id := ""
+
+static func _sid() -> String:
+	if session_id == "":
+		session_id = "%d-%04d" % [int(Time.get_unix_time_from_system()), randi() % 10000]
+	return session_id
+
+static func _csv(v: String) -> String:
+	# virgül/tırnak içeren alanları güvenle kaçır
+	if v.contains(",") or v.contains("\"") or v.contains("\n"):
+		return "\"%s\"" % v.replace("\"", "\"\"")
+	return v
+
+static func log_attempt(code: String, group: String, seen: bool, mode: String, attempt: int,
+		g: bool, k: bool, a: bool, kick_mag: float,
+		v0: float, ang: float, correct: bool, category: String,
+		goal: bool, landing_x: float, decision_s: float) -> void:
+	var stamp := Time.get_datetime_string_from_system(true)
+	# OPSIYONEL sunucu kopyasi (bkz. scripts/Uplink.gd) - yalniz web surumunde,
+	# ates-et-unut; basarisiz olsa bile asagidaki yerel kayit her zaman yazilir.
+	Uplink.post("attempt", {
+		"timestamp_utc": stamp, "session_id": _sid(), "participant_code": code,
+		"group": group, "seen_topic": seen, "session_mode": mode, "attempt": attempt,
+		"gravity": g, "kick_force_sel": k, "air_resistance": a,
+		"kick_force_mag": kick_mag, "v0_mps": v0, "angle_deg": ang,
+		"correct": correct, "category": category, "goal": goal,
+		"landing_x_m": landing_x, "decision_seconds": decision_s,
+	})
+	var exists := FileAccess.file_exists(PATH)
+	var f := FileAccess.open(PATH, FileAccess.READ_WRITE if exists else FileAccess.WRITE)
+	if f == null:
+		push_error("Kayıt dosyası açılamadı: %s" % PATH)
+		return
+	if exists:
+		f.seek_end()
+	else:
+		f.store_string(HEADER)
+	var row := "%s,%s,%s,%s,%s,%s,%d,%s,%s,%s,%.1f,%.1f,%.1f,%s,%s,%s,%.2f,%.1f\n" % [
+		stamp, _sid(), _csv(code), _csv(group),
+		str(seen), mode, attempt,
+		str(g), str(k), str(a), kick_mag, v0, ang,
+		str(correct), _csv(category), str(goal), landing_x, decision_s]
+	f.store_string(row)
+	f.close()
+
+static func read_all() -> String:
+	if not FileAccess.file_exists(PATH):
+		return ""
+	var f := FileAccess.open(PATH, FileAccess.READ)
+	return "" if f == null else f.get_as_text()
+
+static func row_count() -> int:
+	var txt := read_all()
+	if txt == "":
+		return 0
+	var n := -1  # başlık satırını sayma
+	for line in txt.split("\n"):
+		if line.strip_edges() != "":
+			n += 1
+	return maxi(n, 0)
+
+## Son N kaydı kısa özet olarak döndürür - "veri durumu" penceresinde
+## loglamanın gerçekten çalıştığını gözle doğrulamak için.
+static func tail(n := 3) -> String:
+	var txt := read_all()
+	if txt == "":
+		return "(henüz kayıt yok)"
+	var lines: Array = []
+	for line in txt.split("\n"):
+		if line.strip_edges() != "":
+			lines.append(line)
+	if lines.size() <= 1:
+		return "(henüz kayıt yok)"
+	var out := PackedStringArray()
+	var start := maxi(1, lines.size() - n)
+	for i in range(start, lines.size()):
+		var c: PackedStringArray = String(lines[i]).split(",")
+		if c.size() >= 16:
+			out.append("- %s | deneme %s | Y:%s F:%s H:%s | doğru:%s gol:%s" % [
+				c[2], c[6], c[7], c[8], c[9], c[13], c[15]])
+	return "\n".join(out) if out.size() > 0 else "(okunamadı)"
+
+static func export_to(dest: String) -> bool:
+	var txt := read_all()
+	if txt == "":
+		return false
+	var dst := FileAccess.open(dest, FileAccess.WRITE)
+	if dst == null:
+		return false
+	dst.store_string(txt)
+	dst.close()
+	return true
+
+## Tarayıcı sürümünde CSV'yi indirir (masaüstündeki dosya diyaloğu web'de çalışmaz).
+static func web_download() -> bool:
+	if not OS.has_feature("web"):
+		return false
+	var txt := read_all()
+	if txt == "":
+		return false
+	var js := """
+	(function(t){
+		var b = new Blob([t], {type:'text/csv;charset=utf-8;'});
+		var u = URL.createObjectURL(b);
+		var a = document.createElement('a');
+		a.href = u; a.download = 'kicked_ball_data.csv';
+		document.body.appendChild(a); a.click();
+		setTimeout(function(){ URL.revokeObjectURL(u); a.remove(); }, 100);
+	})(%s);
+	""" % JSON.stringify(txt)
+	JavaScriptBridge.eval(js, true)
+	return true
