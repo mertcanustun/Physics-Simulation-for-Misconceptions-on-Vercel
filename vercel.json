@@ -1,6 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "cleanUrls": false,
   "headers": [
     {
       "source": "/(.*)\\.wasm",
@@ -10,16 +9,27 @@
       ]
     },
     {
-      "source": "/(.*)\\.pck",
+      "source": "/(.*)\\.(pck|js)",
       "headers": [
-        { "key": "Content-Type", "value": "application/octet-stream" },
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     },
     {
       "source": "/index.html",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/b20260812b/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, must-revalidate" }
       ]
     }
   ]
