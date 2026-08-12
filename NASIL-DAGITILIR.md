@@ -1,4 +1,4 @@
-# Vercel'e dağıtım — build 2026-08-12b
+# Vercel'e dağıtım — build 2026-08-12c
 
 ## Önce: neden alt klasör var?
 
@@ -8,7 +8,7 @@ yeni build yüklense bile ekranda ESKİ sürüm görünüyordu (metinlerin
 `KICK_PANEL_TITLE` gibi anahtar isimleri olarak çıkması bunun belirtisiydi).
 
 Bu paket bunu imkânsız kılar:
-- Tüm oyun dosyaları `/b20260812b/` altında → **yepyeni URL'ler**, hiçbir
+- Tüm oyun dosyaları `/b20260812c/` altında → **yepyeni URL'ler**, hiçbir
   önbellek onları tanımıyor.
 - Kökteki küçük `index.html` oraya yönlendiriyor ve
   `no-store` ile servis ediliyor → yönlendirme sayfası asla önbelleklenmez.
@@ -19,11 +19,13 @@ Bu paket bunu imkânsız kılar:
 
 Siteyi aç → **F12** → Console. Şu satır görünmeli:
 
-    === kicked-ball build 2026-08-12b | metin: 42 anahtar yüklendi | impetus_acc=4.0 drag_k=0.025 goal_x=34.0 ===
+    === kicked-ball build 2026-08-12c | metin: 55 anahtar (csv) | impetus_acc=4.0 drag_k=0.025 goal_x=34.0 ===
 
-- `metin: 42` → CSV düzgün paketlenmiş, metinler yerinde.
-- `metin: 0` veya `metin: -1` → CSV pakete girmemiş (bkz. GELISTIRME-REHBERI,
-  `strings.csv.import` içinde `importer="keep"` olmalı).
+- `metin: 55 (csv)` → her şey normal.
+- `metin: 55 (baked)` → CSV pakete girmemiş ama pişirilmiş yedek devrede;
+  metinler DOĞRU görünür, yine de `strings.csv.import` düzeltilmeli.
+- `metin: 0` → hiçbir kaynak yüklenmedi (bu artık olmamalı; olursa
+  `tools/bake_strings.gd` çalıştırılmamış demektir).
 - Build numarası farklı çıkıyorsa → ESKİ sürümü görüyorsun, yeni dağıtım
   yayına geçmemiş demektir.
 
@@ -35,7 +37,7 @@ Siteyi aç → **F12** → Console. Şu satır görünmeli:
 
 ## Seçenek B — GitHub üzerinden
 
-1. Bu klasörün İÇERİĞİNİ (kökte `index.html`, `vercel.json` ve `b20260812b/`
+1. Bu klasörün İÇERİĞİNİ (kökte `index.html`, `vercel.json` ve `b20260812c/`
    olacak şekilde) bir repoya koy.
 2. vercel.com → Add New → Project → repoyu Import et.
 3. Framework Preset: **Other** · Build Command: **(boş)** ·
